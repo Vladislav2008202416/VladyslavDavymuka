@@ -4,7 +4,6 @@ namespace MyFirstApp;
 // 2 мітки main dev github робити це все через git push
 public partial class MainWindow : Window
 {
-
     public MainWindow()
     {
         InitializeComponent();
