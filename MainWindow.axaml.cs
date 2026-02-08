@@ -6,6 +6,8 @@ public partial class MainWindow : Window
 {
     public MainWindow()
     {
+    int newNumber = 10;
+
         InitializeComponent();
     }
     // Цей метод спрацює, коли натиснеш кнопку
@@ -17,7 +19,6 @@ public void Button_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e
     {
         textBlock.Text = "Ти натиснув кнопку!";
     }
-
 
 }
 }
