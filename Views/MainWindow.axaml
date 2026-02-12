@@ -1,0 +1,105 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MyThirdApp.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="600"
+        x:Class="MyThirdApp.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Мій Гаманець"
+        Width="400" Height="600"
+        Background="#1E1E1E">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Panel Margin="20">
+        
+        <StackPanel IsVisible="{Binding IsLoginVisible}" Spacing="15" VerticalAlignment="Center">
+            <TextBlock Text="💰 Вхід у Гаманець" FontSize="24" HorizontalAlignment="Center" FontWeight="Bold" Foreground="White"/>
+            <TextBox Text="{Binding Email}" Watermark="Email" />
+            <TextBox Text="{Binding Password}" Watermark="Пароль" PasswordChar="*" />
+            <Button Content="Увійти" Command="{Binding LoginCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+            <Button Content="Зареєструватися" Command="{Binding ShowRegisterScreen}" HorizontalAlignment="Center" Background="Transparent" Foreground="#4FA3FF"/>
+            <TextBlock Text="{Binding Message}" Foreground="#FF5555" HorizontalAlignment="Center" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <StackPanel IsVisible="{Binding IsRegisterVisible}" Spacing="15" VerticalAlignment="Center">
+            <TextBlock Text="Новий користувач" FontSize="24" HorizontalAlignment="Center" FontWeight="Bold" Foreground="White"/>
+            <TextBox Text="{Binding Name}" Watermark="Ваше Ім'я" />
+            <TextBox Text="{Binding Email}" Watermark="Email" />
+            <TextBox Text="{Binding Password}" Watermark="Пароль" PasswordChar="*" />
+            <Button Content="Створити акаунт" Command="{Binding RegisterCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Background="Green" Foreground="White"/>
+            <Button Content="Назад" Command="{Binding ShowLoginScreen}" HorizontalAlignment="Center" Background="Transparent" Foreground="White"/>
+        </StackPanel>
+
+        <Grid IsVisible="{Binding IsAccountVisible}" RowDefinitions="Auto, Auto, *, Auto, Auto">
+            
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                <TextBlock Text="Привіт, " FontSize="18" Foreground="White"/>
+                <TextBlock Text="{Binding CurrentUserName}" FontSize="18" FontWeight="Bold" Foreground="#4FA3FF"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Spacing="10" Margin="0,0,0,15">
+                
+                <Button Content="{Binding DateButtonText}" 
+                        HorizontalAlignment="Center" 
+                        Background="#333333" 
+                        Foreground="White"
+                        CornerRadius="20"
+                        Padding="15, 8">
+                    <Button.Flyout>
+                        <Flyout>
+                            <Calendar SelectionMode="SingleDate" SelectedDate="{Binding SelectedDate}"/>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+
+                <Grid ColumnDefinitions="*, *, Auto">
+                    <TextBox Grid.Column="0" Text="{Binding NewTitle}" Watermark="Що купив?" Margin="0,0,5,0"/>
+                    <TextBox Grid.Column="1" Text="{Binding NewAmount}" Watermark="Сума" Margin="0,0,5,0"/>
+                    <Button Grid.Column="2" Content="+" Command="{Binding AddExpenseCommand}" Width="40" Background="#4CAF50" Foreground="White"/>
+                </Grid>
+            </StackPanel>
+
+            <Border Grid.Row="2" BorderBrush="#333333" BorderThickness="1" CornerRadius="5" Background="#252526">
+                <ListBox ItemsSource="{Binding MyExpenses}" Background="Transparent">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="*, Auto, Auto, Auto" Margin="0,5">
+                                
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Title}" FontWeight="Bold" Foreground="White" FontSize="16"/>
+                                    <TextBlock Text="{Binding TimeDisplay}" FontSize="12" Foreground="Gray"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Column="1" Text="{Binding Amount}" Foreground="#FF6B6B" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0"/>
+                                <TextBlock Grid.Column="2" Text="грн" Foreground="#FF6B6B" VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                                <Button Grid.Column="3" 
+                                        Content="❌" 
+                                        Background="Transparent"
+                                        Command="{Binding $parent[Window].DataContext.DeleteExpenseCommand}"
+                                        CommandParameter="{Binding Id}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+
+            <StackPanel Grid.Row="4" Margin="0,20,0,0" Spacing="10">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock Text="ВСЬОГО: " FontSize="20" Foreground="White"/>
+                    <TextBlock Text="{Binding TotalSum}" FontSize="20" FontWeight="Bold" Foreground="#4CAF50"/>
+                    <TextBlock Text=" грн" FontSize="20" FontWeight="Bold" Foreground="#4CAF50"/>
+                </StackPanel>
+                
+                <Button Content="Вийти" Command="{Binding LogoutCommand}" HorizontalAlignment="Center" Background="#333333" Foreground="White"/>
+            </StackPanel>
+
+        </Grid>
+
+    </Panel>
+</Window>
