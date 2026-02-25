@@ -44,18 +44,27 @@
 
             <StackPanel Grid.Row="1" Spacing="10" Margin="0,0,0,15">
                 
-                <Button Content="{Binding DateButtonText}" 
-                        HorizontalAlignment="Center" 
-                        Background="#333333" 
-                        Foreground="White"
-                        CornerRadius="20"
-                        Padding="15, 8">
-                    <Button.Flyout>
-                        <Flyout>
-                            <Calendar SelectionMode="SingleDate" SelectedDate="{Binding SelectedDate}"/>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
+                <Grid ColumnDefinitions="*, Auto">
+                    <Button Grid.Column="0" 
+                            Content="{Binding DateButtonText}" 
+                            HorizontalAlignment="Stretch" 
+                            HorizontalContentAlignment="Center"
+                            Background="#333333" 
+                            Foreground="White"
+                            CornerRadius="10">
+                        <Button.Flyout>
+                            <Flyout>
+                                <Calendar SelectionMode="SingleDate" SelectedDate="{Binding SelectedDate}"/>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                    
+                    <CheckBox Grid.Column="1" 
+                              IsChecked="{Binding ShowAllHistory}" 
+                              Content="Вся історія" 
+                              Margin="10,0,0,0"
+                              Foreground="Gray"/>
+                </Grid>
 
                 <Grid ColumnDefinitions="*, *, Auto">
                     <TextBox Grid.Column="0" Text="{Binding NewTitle}" Watermark="Що купив?" Margin="0,0,5,0"/>

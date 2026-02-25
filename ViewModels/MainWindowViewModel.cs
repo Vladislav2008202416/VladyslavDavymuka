@@ -10,31 +10,42 @@ public class ExpenseItem
     public int Id { get; set; }
     public string Title { get; set; } = "";
     public decimal Amount { get; set; }
-    public string TimeDisplay { get; set; } = ""; // Тільки час (14:30)
+    public string TimeDisplay { get; set; } = ""; 
 }
 
 public class MainWindowViewModel : ViewModelBase
 {
-    // ⚠️ Твій пароль
+    // ⚠️ ПЕРЕВІР ПАРОЛЬ!
     private const string ConnString = "Server=localhost;User=root;Password=VLad2008202416;Database=shop1;";
 
-    // --- ЕКРАНИ ---
+    // --- ЗМІННІ ЕКРАНІВ ---
     private bool _isLoginVisible = true; public bool IsLoginVisible { get => _isLoginVisible; set => this.RaiseAndSetIfChanged(ref _isLoginVisible, value); }
     private bool _isRegisterVisible = false; public bool IsRegisterVisible { get => _isRegisterVisible; set => this.RaiseAndSetIfChanged(ref _isRegisterVisible, value); }
     private bool _isAccountVisible = false; public bool IsAccountVisible { get => _isAccountVisible; set => this.RaiseAndSetIfChanged(ref _isAccountVisible, value); }
 
-    // --- ДАНІ КОРИСТУВАЧА ---
+    // --- ДАНІ ---
     private string _email = ""; public string Email { get => _email; set => this.RaiseAndSetIfChanged(ref _email, value); }
     private string _password = ""; public string Password { get => _password; set => this.RaiseAndSetIfChanged(ref _password, value); }
     private string _name = ""; public string Name { get => _name; set => this.RaiseAndSetIfChanged(ref _name, value); }
     private string _message = ""; public string Message { get => _message; set => this.RaiseAndSetIfChanged(ref _message, value); }
     private string _currentUserName = ""; public string CurrentUserName { get => _currentUserName; set => this.RaiseAndSetIfChanged(ref _currentUserName, value); }
 
-    // --- ТРЕКЕР ---
     public ObservableCollection<ExpenseItem> MyExpenses { get; } = new();
-    
-    // --- КАЛЕНДАР (Виправлений) ---
-    // Ми використовуємо звичайний DateTime, щоб не було помилок
+
+    // --- ГАЛОЧКА "ВСЯ ІСТОРІЯ" ---
+    private bool _showAllHistory = false;
+    public bool ShowAllHistory
+    {
+        get => _showAllHistory;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _showAllHistory, value);
+            this.RaisePropertyChanged(nameof(DateButtonText));
+            LoadExpenses(); 
+        }
+    }
+
+    // --- КАЛЕНДАР ---
     private DateTime _selectedDate = DateTime.Now; 
     public DateTime SelectedDate 
     { 
@@ -42,15 +53,20 @@ public class MainWindowViewModel : ViewModelBase
         set 
         {
             this.RaiseAndSetIfChanged(ref _selectedDate, value);
-            // Оновлюємо текст на кнопці календаря
-            this.RaisePropertyChanged(nameof(DateButtonText));
-            // Завантажуємо список для нової дати
-            LoadExpenses(); 
+            
+            if (ShowAllHistory)
+            {
+                ShowAllHistory = false; 
+            }
+            else
+            {
+                this.RaisePropertyChanged(nameof(DateButtonText));
+                LoadExpenses();
+            }
         }
     }
 
-    // Текст, який буде написано на кнопці (напр. "12.02.2026")
-    public string DateButtonText => SelectedDate.ToString("dd.MM.yyyy");
+    public string DateButtonText => ShowAllHistory ? "📅 Вся історія" : SelectedDate.ToString("dd.MM.yyyy");
 
     private string _newTitle = ""; public string NewTitle { get => _newTitle; set => this.RaiseAndSetIfChanged(ref _newTitle, value); }
     private string _newAmount = ""; public string NewAmount { get => _newAmount; set => this.RaiseAndSetIfChanged(ref _newAmount, value); }
@@ -70,7 +86,6 @@ public class MainWindowViewModel : ViewModelBase
                     cmd.Parameters.AddWithValue("@uEmail", Email);
                     cmd.Parameters.AddWithValue("@uPass", Password);
                     var result = cmd.ExecuteScalar();
-
                     if (result != null)
                     {
                         CurrentUserName = result.ToString();
@@ -114,26 +129,35 @@ public class MainWindowViewModel : ViewModelBase
         using (var conn = new MySqlConnection(ConnString))
         {
             conn.Open();
-            // Беремо записи тільки за обраний день
-            // DATE(date) відрізає години, залишає тільки рік-місяць-день
-            string sql = "SELECT id, title, amount, date FROM expenses WHERE user_email = @uEmail AND DATE(date) = DATE(@uDate) ORDER BY id DESC";
+            string sql;
+            
+            if (ShowAllHistory)
+            {
+                sql = "SELECT id, title, amount, date FROM expenses WHERE user_email = @uEmail ORDER BY date DESC";
+            }
+            else
+            {
+                sql = "SELECT id, title, amount, date FROM expenses WHERE user_email = @uEmail AND DATE(date) = DATE(@uDate) ORDER BY id DESC";
+            }
             
             using (var cmd = new MySqlCommand(sql, conn))
             {
                 cmd.Parameters.AddWithValue("@uEmail", Email);
-                cmd.Parameters.AddWithValue("@uDate", SelectedDate); 
+                if (!ShowAllHistory) cmd.Parameters.AddWithValue("@uDate", SelectedDate); 
 
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
+                        DateTime dt = reader.GetDateTime("date");
+                        string timeStr = ShowAllHistory ? dt.ToString("dd.MM HH:mm") : dt.ToString("HH:mm");
+
                         MyExpenses.Add(new ExpenseItem 
                         { 
                             Id = reader.GetInt32("id"), 
                             Title = reader.GetString("title"), 
-                            // Категорії тут більше немає
                             Amount = reader.GetDecimal("amount"),
-                            TimeDisplay = reader.GetDateTime("date").ToString("HH:mm") // Формат часу (14:30)
+                            TimeDisplay = timeStr 
                         });
                         TotalSum += reader.GetDecimal("amount"); 
                     }
@@ -142,7 +166,7 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
-    // --- ДОДАВАННЯ ---
+    // 🔥 ОНОВЛЕНЕ ДОДАВАННЯ ВИТРАТ
     public void AddExpenseCommand()
     {
         if (string.IsNullOrWhiteSpace(NewTitle) || string.IsNullOrWhiteSpace(NewAmount)) return;
@@ -152,20 +176,28 @@ public class MainWindowViewModel : ViewModelBase
             using (var conn = new MySqlConnection(ConnString))
             {
                 conn.Open();
-                // NOW() - це функція MySQL, яка бере поточний час твого комп'ютера (Україна)
-                string sql = "INSERT INTO expenses (user_email, title, amount, date) VALUES (@uEmail, @uTitle, @uAmount, NOW())";
+                // ЗАМІСТЬ NOW() ми використовуємо параметр @uDate
+                string sql = "INSERT INTO expenses (user_email, title, amount, date) VALUES (@uEmail, @uTitle, @uAmount, @uDate)";
                 using (var cmd = new MySqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@uEmail", Email);
                     cmd.Parameters.AddWithValue("@uTitle", NewTitle);
                     cmd.Parameters.AddWithValue("@uAmount", cost);
+
+                    // Якщо стоїть "Вся історія" - додаємо на сьогодні.
+                    // Якщо обрано конкретний день - беремо його дату + додаємо поточні години/хвилини.
+                    DateTime targetDate = ShowAllHistory 
+                                        ? DateTime.Now 
+                                        : SelectedDate.Date + DateTime.Now.TimeOfDay;
+                    
+                    cmd.Parameters.AddWithValue("@uDate", targetDate);
+
                     cmd.ExecuteNonQuery();
                 }
             }
             
-            // Якщо ми дивимось не на "Сьогодні", перемкнемо календар на сьогодні
-            if (SelectedDate.Date != DateTime.Today) SelectedDate = DateTime.Now;
-            else LoadExpenses(); 
+            // Просто оновлюємо список. Ми більше не перекидаємо тебе на сьогоднішній день!
+            LoadExpenses();
 
             NewTitle = ""; NewAmount = ""; 
         }
@@ -188,7 +220,7 @@ public class MainWindowViewModel : ViewModelBase
             }
             LoadExpenses(); 
         }
-        catch (Exception ex) { Message = "Помилка видалення: " + ex.Message; }
+        catch (Exception ex) { Message = "Помилка: " + ex.Message; }
     }
 
     public void LogoutCommand() { Email = ""; Password = ""; ShowLoginScreen(); }

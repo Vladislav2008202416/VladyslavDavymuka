@@ -80,3 +80,4 @@
 /Users/vladislavdavimuka/Documents/program c#/MyThirdApp/bin/Debug/net10.0/ReactiveUI.dll
 /Users/vladislavdavimuka/Documents/program c#/MyThirdApp/bin/Debug/net10.0/Splat.dll
 /Users/vladislavdavimuka/Documents/program c#/MyThirdApp/bin/Debug/net10.0/System.Reactive.dll
+/Users/vladislavdavimuka/Documents/program c#/MyThirdApp/obj/Debug/net10.0/MyThirdApp.sourcelink.json
